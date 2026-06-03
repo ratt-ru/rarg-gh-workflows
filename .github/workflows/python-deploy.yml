@@ -1,0 +1,45 @@
+name: Deploy Python Package to PyPI
+
+on:
+  workflow_call:
+    inputs:
+      package-name:
+        description: 'PyPI package name, used to build the deploy environment URL.'
+        type: string
+        default: '${{ github.event.repository.name }}'
+      pypi-environment:
+        description: 'GitHub deployment environment name for PyPI publishing.'
+        type: string
+        default: 'pypi'
+      deploy-python-version:
+        description: 'Python version used to build distributions in the deploy job.'
+        type: string
+        default: '3.13'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.pypi-environment }}
+      url: ${{ inputs.package-name != '' && format('https://pypi.org/p/{0}', inputs.package-name) || '' }}
+    permissions:
+      id-token: write
+    steps:
+      - name: Set up Python ${{ inputs.deploy-python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ inputs.deploy-python-version }}
+
+      - name: Checkout source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Build distributions
+        run: |
+          pip install -U pip build
+          python -m build --sdist --wheel
+
+      - name: Publish distribution 📦 to PyPI
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+        uses: pypa/gh-action-pypi-publish@release/v1
