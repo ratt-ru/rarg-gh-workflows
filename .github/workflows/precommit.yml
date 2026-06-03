@@ -1,0 +1,24 @@
+name: Run pre-commit hooks
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        type: string
+        default: "3.12"
+
+jobs:
+  run-pre-commit-hooks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ inputs.python-version }}
+      - uses: pre-commit/action@v3.0.1
+
+
+
